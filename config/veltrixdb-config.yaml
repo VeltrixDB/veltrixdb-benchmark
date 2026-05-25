@@ -1,0 +1,31 @@
+# VeltrixDB benchmark configuration defaults.
+# These values are passed as CLI flags to the VeltrixDB Docker container.
+# Override any value via environment variables in .env or via run-benchmark.sh CLI flags.
+
+server:
+  addr: ":9000"
+  metrics_addr: ":2112"
+  data_dir: "/data"
+  node_id: "benchmark-node-1"
+
+storage:
+  # LIRS cache size in MB.
+  # Increase significantly for read-heavy benchmarks (e.g. 65536 for 64 GB).
+  cache_mb: 256
+
+  # VLog dead-space ratio that triggers garbage collection (0.0–1.0).
+  # Lower = more frequent GC, less wasted space.  Higher = more write throughput.
+  gc_threshold: 0.30
+
+  # WAL group-commit window in milliseconds.
+  # Both WAL and VLog windows MUST be equal (concurrent fdatasync race).
+  # Lower = lower latency.  Higher = higher throughput.
+  # Formula: writes/goroutine/s ≈ 1000 / window_ms
+  wal_flush_window_ms: 10
+  vlog_flush_window_ms: 10
+
+  # Max WAL entries before early flush (burst cap within window).
+  wal_max_batch: 4096
+
+  # VLog scrubber bandwidth per disk (MB/s).
+  scrub_mb_per_sec: 50

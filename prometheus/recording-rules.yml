@@ -1,0 +1,115 @@
+groups:
+
+  # ── Throughput ───────────────────────────────────────────────────────────────
+  - name: veltrixdb_throughput
+    interval: 5s
+    rules:
+
+      - record: veltrixdb:write_ops_per_second
+        expr: rate(veltrixdb_storage_writes_total[30s])
+
+      - record: veltrixdb:read_ops_per_second
+        expr: rate(veltrixdb_storage_reads_total[30s])
+
+      - record: veltrixdb:delete_ops_per_second
+        expr: rate(veltrixdb_storage_deletes_total[30s])
+
+      - record: veltrixdb:total_ops_per_second
+        expr: |
+          rate(veltrixdb_storage_writes_total[30s])
+          + rate(veltrixdb_storage_reads_total[30s])
+          + rate(veltrixdb_storage_deletes_total[30s])
+
+      - record: veltrixdb:write_data_rate_bytes_per_second
+        expr: rate(veltrixdb_server_network_bytes_in_total[30s])
+
+      - record: veltrixdb:read_data_rate_bytes_per_second
+        expr: rate(veltrixdb_server_network_bytes_out_total[30s])
+
+  # ── Latency ──────────────────────────────────────────────────────────────────
+  - name: veltrixdb_latency
+    interval: 5s
+    rules:
+
+      - record: veltrixdb:write_p50_seconds
+        expr: histogram_quantile(0.50, rate(veltrixdb_storage_write_latency_seconds_bucket[30s]))
+
+      - record: veltrixdb:write_p95_seconds
+        expr: histogram_quantile(0.95, rate(veltrixdb_storage_write_latency_seconds_bucket[30s]))
+
+      - record: veltrixdb:write_p99_seconds
+        expr: histogram_quantile(0.99, rate(veltrixdb_storage_write_latency_seconds_bucket[30s]))
+
+      - record: veltrixdb:read_p50_seconds
+        expr: histogram_quantile(0.50, rate(veltrixdb_storage_read_latency_seconds_bucket[30s]))
+
+      - record: veltrixdb:read_p95_seconds
+        expr: histogram_quantile(0.95, rate(veltrixdb_storage_read_latency_seconds_bucket[30s]))
+
+      - record: veltrixdb:read_p99_seconds
+        expr: histogram_quantile(0.99, rate(veltrixdb_storage_read_latency_seconds_bucket[30s]))
+
+      - record: veltrixdb:delete_p99_seconds
+        expr: histogram_quantile(0.99, rate(veltrixdb_storage_delete_latency_seconds_bucket[30s]))
+
+  # ── Cache ────────────────────────────────────────────────────────────────────
+  - name: veltrixdb_cache
+    interval: 5s
+    rules:
+
+      - record: veltrixdb:cache_hit_rate
+        expr: |
+          rate(veltrixdb_cache_hits_total[30s])
+          / clamp_min(
+              rate(veltrixdb_cache_hits_total[30s])
+              + rate(veltrixdb_cache_misses_total[30s]),
+              1
+          )
+
+      - record: veltrixdb:cache_utilization
+        expr: veltrixdb_cache_size_bytes / clamp_min(veltrixdb_cache_max_size_bytes, 1)
+
+  # ── GC / Compaction ───────────────────────────────────────────────────────────
+  - name: veltrixdb_gc
+    interval: 5s
+    rules:
+
+      - record: veltrixdb:gc_runs_per_minute
+        expr: rate(veltrixdb_vlog_gc_runs_total[1m]) * 60
+
+      - record: veltrixdb:gc_bytes_reclaimed_per_second
+        expr: rate(veltrixdb_vlog_gc_bytes_total[30s])
+
+      - record: veltrixdb:gc_emergency_rate
+        expr: rate(veltrixdb_vlog_gc_emergency_runs_total[5m])
+
+      - record: veltrixdb:gc_skipped_ratio
+        expr: |
+          rate(veltrixdb_vlog_gc_skipped_ratio_total[1m])
+          / clamp_min(rate(veltrixdb_vlog_gc_runs_total[1m]) + rate(veltrixdb_vlog_gc_skipped_ratio_total[1m]) + rate(veltrixdb_vlog_gc_skipped_paused_total[1m]) + rate(veltrixdb_vlog_gc_skipped_empty_total[1m]), 1)
+
+  # ── Admission control ─────────────────────────────────────────────────────────
+  - name: veltrixdb_admission
+    interval: 5s
+    rules:
+
+      - record: veltrixdb:write_throttle_rate
+        expr: rate(veltrixdb_storage_write_admission_throttles_total[30s])
+
+      - record: veltrixdb:throttle_fraction
+        expr: |
+          rate(veltrixdb_storage_write_admission_throttles_total[30s])
+          / clamp_min(rate(veltrixdb_storage_writes_total[30s]), 1)
+
+  # ── WAL ───────────────────────────────────────────────────────────────────────
+  - name: veltrixdb_wal
+    interval: 5s
+    rules:
+
+      - record: veltrixdb:wal_flushes_per_second
+        expr: rate(veltrixdb_storage_wal_flushes_total[30s])
+
+      - record: veltrixdb:wal_avg_batch_size
+        expr: |
+          rate(veltrixdb_storage_wal_batch_entries_total[30s])
+          / clamp_min(rate(veltrixdb_storage_wal_flushes_total[30s]), 1)

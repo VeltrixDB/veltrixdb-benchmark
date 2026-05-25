@@ -1,0 +1,23 @@
+# Mixed workload profile (default).
+# 70% reads / 30% writes — realistic OLTP-style workload.
+# Good baseline for comparing VeltrixDB against other databases.
+
+profile:
+  name: mixed
+  description: "70% reads / 30% writes — YCSB Workload A variant"
+
+veltrixdb:
+  cache_mb: 256
+  gc_threshold: 0.30
+  wal_flush_window_ms: 10
+  vlog_flush_window_ms: 10
+
+benchmark:
+  mode: mixed
+  duration: 60
+  warmup_duration: 10
+  concurrency: 16
+  num_keys: 1000000
+  value_size: 128
+  batch_size: 1
+  read_ratio: 0.70

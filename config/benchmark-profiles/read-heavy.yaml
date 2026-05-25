@@ -1,0 +1,24 @@
+# Read-heavy benchmark profile.
+# Optimised for maximum read throughput with a warm LIRS cache.
+# Mirrors the VeltrixDB --read-heavy preset (large cache, long GC intervals).
+
+profile:
+  name: read-heavy
+  description: "Maximum read throughput — large cache, high concurrency, random access"
+
+veltrixdb:
+  cache_mb: 4096        # increase to 65536 (64 GB) on production hosts
+  gc_threshold: 0.40    # less frequent GC to avoid competing with reads
+  wal_flush_window_ms: 10
+  vlog_flush_window_ms: 10
+
+benchmark:
+  mode: read
+  duration: 120
+  warmup_duration: 30   # warm the cache before measuring
+  concurrency: 64       # more goroutines = more read parallelism
+  num_keys: 500000      # keep keyspace small enough to fit in cache
+  value_size: 128
+  batch_size: 64        # MGET batches amortise per-request overhead
+  read_ratio: 1.0
+  access_pattern: random

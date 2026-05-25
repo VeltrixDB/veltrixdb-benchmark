@@ -1,0 +1,22 @@
+# Balanced workload — equal reads and writes with batching.
+# Models a write-read cycle typical in event-sourcing or audit-log applications.
+
+profile:
+  name: balanced
+  description: "50% reads / 50% writes — YCSB Workload A exact — batched"
+
+veltrixdb:
+  cache_mb: 512
+  gc_threshold: 0.30
+  wal_flush_window_ms: 5
+  vlog_flush_window_ms: 5
+
+benchmark:
+  mode: mixed
+  duration: 90
+  warmup_duration: 15
+  concurrency: 16
+  num_keys: 2000000
+  value_size: 256
+  batch_size: 256
+  read_ratio: 0.50

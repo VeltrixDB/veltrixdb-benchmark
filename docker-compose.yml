@@ -1,0 +1,84 @@
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  benchmark:
+    driver: bridge
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  veltrixdb_data:
+  prometheus_data:
+  grafana_data:
+
+# ── Services ──────────────────────────────────────────────────────────────────
+services:
+
+  # ── VeltrixDB ──────────────────────────────────────────────────────────────
+  veltrixdb:
+    image: "${VELTRIXDB_IMAGE:-ghcr.io/veltrixdb/veltrixdb:latest}"
+    platform: linux/amd64
+    profiles: [veltrixdb]
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-9000}:9000"       # binary / text TCP protocol
+      - "${METRICS_PORT:-2112}:2112"  # Prometheus metrics + admin API
+    volumes:
+      - veltrixdb_data:/data
+      - ./config/veltrixdb-config.yaml:/etc/veltrixdb/config.yaml:ro
+    command:
+      - "-addr=:9000"
+      - "-metrics-addr=:2112"
+      - "-data=/data"
+      - "-cache=${VDB_CACHE_MB:-256}"
+      - "-gc-threshold=${VDB_GC_THRESHOLD:-0.30}"
+      - "-wal-flush-window-ms=${VDB_WAL_FLUSH_WINDOW_MS:-10}"
+      - "-vlog-flush-window-ms=${VDB_WAL_FLUSH_WINDOW_MS:-10}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:2112/readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    networks:
+      - benchmark
+
+  # ── Prometheus ────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    profiles: [monitoring]
+    restart: unless-stopped
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/recording-rules.yml:/etc/prometheus/recording-rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    networks:
+      - benchmark
+
+  # ── Grafana ────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.2
+    profiles: [monitoring]
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/veltrixdb-overview.json
+      GF_INSTALL_PLUGINS: ""
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - benchmark

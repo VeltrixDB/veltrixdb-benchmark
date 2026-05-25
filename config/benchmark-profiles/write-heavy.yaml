@@ -1,0 +1,23 @@
+# Write-heavy benchmark profile.
+# Optimised for maximum write throughput using batched MPUT operations.
+# Mirrors the VeltrixDB bench.sh "bulk-load" phase.
+
+profile:
+  name: write-heavy
+  description: "Maximum write throughput — batched MPUT, small WAL window, high concurrency"
+
+veltrixdb:
+  cache_mb: 512
+  gc_threshold: 0.30
+  wal_flush_window_ms: 5
+  vlog_flush_window_ms: 5
+
+benchmark:
+  mode: write
+  duration: 120
+  warmup_duration: 10
+  concurrency: 8        # low concurrency + large batches = best packing density
+  num_keys: 5000000
+  value_size: 128
+  batch_size: 1024      # MPUT batch — engages VLog block packing (~25× density)
+  read_ratio: 0.0

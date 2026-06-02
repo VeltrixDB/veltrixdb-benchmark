@@ -1,0 +1,35 @@
+# YCSB Workload A — Update Heavy
+# Application: session store recording recent user actions
+# Mix: 50% reads, 50% updates  |  Distribution: Zipfian (hot keys)
+#
+# This is the most common workload for write-heavy systems.
+# Hot keys get hammered repeatedly — tests cache + write coexistence.
+
+workload=site.ycsb.workloads.CoreWorkload
+
+# Dataset
+recordcount=1000000
+operationcount=10000000
+
+# Single field per record avoids merge-read overhead and gives clean throughput numbers.
+# Change to fieldcount=10 + fieldlength=100 for strict YCSB semantics.
+fieldcount=1
+fieldlength=1000
+
+# Operation mix
+readallfields=true
+readproportion=0.5
+updateproportion=0.5
+scanproportion=0
+insertproportion=0
+
+# Key distribution — Zipfian means a small number of keys get most traffic.
+requestdistribution=zipfian
+
+# VeltrixDB connection
+veltrixdb.host=127.0.0.1
+veltrixdb.port=9000
+veltrixdb.socket.timeout=10000
+
+# overwrite is correct when fieldcount=1 (no partial update ambiguity)
+veltrixdb.update.mode=overwrite

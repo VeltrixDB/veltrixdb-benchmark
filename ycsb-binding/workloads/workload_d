@@ -1,0 +1,28 @@
+# YCSB Workload D — Read Latest
+# Application: user activity stream — new items are inserted and read back quickly
+# Mix: 95% reads, 5% inserts  |  Distribution: Latest (newest keys favoured)
+#
+# "Latest" distribution skews reads toward the most recently inserted keys.
+# Tests the recency bias in caches — LIRS should naturally handle this well.
+
+workload=site.ycsb.workloads.CoreWorkload
+
+recordcount=1000000
+operationcount=10000000
+
+fieldcount=1
+fieldlength=1000
+
+readallfields=true
+readproportion=0.95
+updateproportion=0
+scanproportion=0
+insertproportion=0.05
+
+# Latest distribution: reads prefer keys inserted most recently.
+requestdistribution=latest
+
+veltrixdb.host=127.0.0.1
+veltrixdb.port=9000
+veltrixdb.socket.timeout=10000
+veltrixdb.update.mode=overwrite

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.veltrixdb</groupId>
+    <artifactId>veltrixdb-ycsb-binding</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>VeltrixDB YCSB Binding</name>
+    <description>
+        Official YCSB (Yahoo Cloud Serving Benchmark) binding for VeltrixDB.
+        Implements the YCSB DB interface using VeltrixDB's binary TCP protocol
+        via VeltrixDBClient (namespace ops for table isolation, binary field serialization).
+    </description>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <ycsb.version>0.17.0</ycsb.version>
+        <veltrixdb.client.version>1.0.0</veltrixdb.client.version>
+    </properties>
+
+    <dependencies>
+        <!--
+            YCSB core — provided at runtime by the YCSB harness.
+            Must be on the classpath when running benchmarks but is NOT
+            embedded in the fat JAR (YCSB ships its own core JAR).
+        -->
+        <dependency>
+            <groupId>site.ycsb</groupId>
+            <artifactId>core</artifactId>
+            <version>${ycsb.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            VeltrixDB Java client — bundled into the fat JAR so that
+            dropping a single JAR into YCSB is enough.
+
+            Pre-install step (run once from Veltrixdb-client/java/):
+                mvn install -DskipTests
+        -->
+        <dependency>
+            <groupId>com.veltrixdb</groupId>
+            <artifactId>veltrixdb-client</artifactId>
+            <version>${veltrixdb.client.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+            </plugin>
+
+            <!--
+                Shade plugin: produces a fat JAR (veltrixdb-ycsb-binding-1.0.0-all.jar)
+                that bundles the VeltrixDB client alongside the binding class.
+                YCSB core classes are excluded (provided scope) so the harness supplies them.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>all</shadedClassifierName>
+                            <artifactSet>
+                                <excludes>
+                                    <!-- Do not bundle YCSB core — the harness provides it -->
+                                    <exclude>site.ycsb:core</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!--
+        YCSB core is published to Maven Central.
+        No extra repository needed for YCSB 0.17.0+.
+    -->
+</project>

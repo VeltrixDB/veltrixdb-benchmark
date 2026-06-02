@@ -1,0 +1,33 @@
+# YCSB Workload F — Read-Modify-Write
+# Application: user database — read a record, modify it, write it back atomically
+# Mix: 50% reads, 50% read-modify-write  |  Distribution: Zipfian
+#
+# RMW (read-modify-write) is a GET followed by a PUT on the same key.
+# This tests round-trip latency under contention.
+# In VeltrixDB, merge update mode performs a real RMW cycle.
+# For strict RMW semantics, use fieldcount=10 so the merge matters.
+
+workload=site.ycsb.workloads.CoreWorkload
+
+recordcount=1000000
+operationcount=5000000
+
+# 10 fields so merge mode actually exercises per-field patching
+fieldcount=10
+fieldlength=100
+
+readallfields=true
+readproportion=0.5
+updateproportion=0
+scanproportion=0
+insertproportion=0
+readmodifywriteproportion=0.5
+
+requestdistribution=zipfian
+
+veltrixdb.host=127.0.0.1
+veltrixdb.port=9000
+veltrixdb.socket.timeout=10000
+
+# merge = correct RMW semantics: reads existing, patches supplied fields, writes back
+veltrixdb.update.mode=merge

@@ -1,0 +1,28 @@
+# YCSB Workload C — Read Only
+# Application: user profile cache, fully warmed
+# Mix: 100% reads  |  Distribution: Zipfian
+#
+# Measures peak read throughput. VeltrixDB's LIRS cache should serve
+# the hot working set entirely from DRAM (~220 ns P50).
+# Use a large -threads value here for maximum saturation.
+
+workload=site.ycsb.workloads.CoreWorkload
+
+recordcount=1000000
+operationcount=10000000
+
+fieldcount=1
+fieldlength=1000
+
+readallfields=true
+readproportion=1.0
+updateproportion=0
+scanproportion=0
+insertproportion=0
+
+requestdistribution=zipfian
+
+veltrixdb.host=127.0.0.1
+veltrixdb.port=9000
+veltrixdb.socket.timeout=10000
+veltrixdb.update.mode=overwrite
